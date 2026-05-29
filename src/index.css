@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base resets ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #00e5ff22 #050508;
+}
+
+body {
+  background-color: #050508;
+  color: #e2e8f0;
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #050508;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* ─── Glassmorphism utility ─── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+/* ─── Neon text glow ─── */
+.neon-text {
+  color: #00e5ff;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6), 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+/* ─── Grid overlay background ─── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* ─── Cursor blink for typewriter ─── */
+.typewriter-cursor::after {
+  content: '|';
+  color: #00e5ff;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.8);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ─── CTA button pulse ring ─── */
+@keyframes ctaPulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.4); }
+  70% { box-shadow: 0 0 0 14px rgba(0, 229, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); }
+}
+
+.cta-pulse {
+  animation: ctaPulse 2.5s ease-out infinite;
+}
+
+/* ─── Scan line (decorative) ─── */
+@keyframes scanline {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+
+.scanline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.15), transparent);
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+}
+
+/* ─── Corner accent for cards ─── */
+.corner-accent {
+  position: relative;
+}
+.corner-accent::before,
+.corner-accent::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #00e5ff;
+  border-style: solid;
+  opacity: 0.6;
+}
+.corner-accent::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+.corner-accent::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ─── Input CLI style ─── */
+.cli-input {
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  color: #e2e8f0;
+  font-family: 'Roboto Mono', monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cli-input:focus {
+  outline: none;
+  border-color: rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2), 0 0 15px rgba(0, 229, 255, 0.08);
+}
+.cli-input::placeholder {
+  color: rgba(148, 163, 184, 0.4);
+  font-size: 0.8rem;
+}
+
+/* ─── Section label ─── */
+.section-label {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: #00e5ff;
+  text-transform: uppercase;
+}
