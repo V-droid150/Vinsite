@@ -100,9 +100,9 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="font-rajdhani font-bold text-5xl md:text-7xl lg:text-8xl text-white leading-tight tracking-tight mb-4"
         >
-          PROFESSIONAL
+          YOUR OWN WEBSITE
           <br />
-          <span className="neon-text">WEB MAKER</span>
+          <span className="neon-text">STARTED HERE</span>
         </motion.h1>
 
         {/* Typewriter line */}
