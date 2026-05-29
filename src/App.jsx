@@ -1,32 +1,20 @@
-import ParticleBackground from './components/ParticleBackground'
-import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import Services from './components/Services'
-import Portfolio from './components/Portfolio'
-import TechStack from './components/TechStack'
-import Contact from './components/Contact'
-import Footer from './components/Footer'
+import { HashRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import AdminLayout from './pages/Admin/AdminLayout'
 
+// HashRouter is used (instead of BrowserRouter) for GitHub Pages compatibility —
+// GH Pages serves static files and doesn't understand client-side routes,
+// so hash-based URLs (/#/admin) work without any server config.
 export default function App() {
   return (
-    <div className="relative min-h-screen bg-dark-bg text-slate-100">
-      {/* Fixed particle canvas behind everything */}
-      <ParticleBackground />
+    <HashRouter>
+      <Routes>
+        {/* Public portfolio */}
+        <Route path="/"        element={<Home />} />
 
-      {/* Main layout stack */}
-      <div className="relative z-10">
-        <Navbar />
-
-        <main>
-          <Hero />
-          <Services />
-          <Portfolio />
-          <TechStack />
-          <Contact />
-        </main>
-
-        <Footer />
-      </div>
-    </div>
+        {/* Hidden admin dashboard — all /admin/* sub-routes handled inside AdminLayout */}
+        <Route path="/admin/*" element={<AdminLayout />} />
+      </Routes>
+    </HashRouter>
   )
 }
