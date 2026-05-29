@@ -1,18 +1,9 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from '../../lib/supabase'
 
-// ─── Mock data ───────────────────────────────────────────────────────────────
-// TODO: Replace each const with a real API call, e.g.:
-//   const [metrics, setMetrics] = useState([])
-//   useEffect(() => { fetch('/api/metrics').then(r => r.json()).then(setMetrics) }, [])
-// ─────────────────────────────────────────────────────────────────────────────
-
-const METRICS = [
-  { label: 'Total Visitors',  value: '12,847', change: '+18%',  period: 'vs last month',  icon: '◈', color: 'cyan'    },
-  { label: 'Active Projects', value: '7',       change: '+2',    period: 'this month',     icon: '◉', color: 'violet'  },
-  { label: 'New Clients',     value: '3',       change: '+1',    period: 'this month',     icon: '◇', color: 'emerald' },
-  { label: 'Est. Revenue',    value: 'Rp 42M',  change: '+23%',  period: 'vs last month',  icon: '⬡', color: 'rose'    },
-]
-
+// ─── Server status (infrastruktur nyata Anda — data ini statis kecuali
+//     Anda menghubungkan monitoring tool seperti UptimeRobot API) ─────────────
 const SERVER_STATUS = [
   { name: 'VPS Primary (Jakarta)', uptime: 99.8, status: 'ONLINE'  },
   { name: 'DNS Manager',           uptime: 100,  status: 'ONLINE'  },
@@ -21,24 +12,16 @@ const SERVER_STATUS = [
   { name: 'Backup Server',         uptime: 98.5, status: 'ONLINE'  },
 ]
 
-const ACTIVITY_LOG = [
-  { time: '09:42', event: 'New contact submission from ahmad@cvnusantara.co.id',     type: 'info'    },
-  { time: '08:15', event: 'Deploy successful — NovaCorp v2.1.0 pushed to production', type: 'success' },
-  { time: 'Kemarin', event: 'SSL auto-renewed for luxestay.co.id',                  type: 'success' },
-  { time: 'Kemarin', event: 'VPS snapshot backup completed — 2.3 GB saved',          type: 'info'    },
-]
-
-// Tailwind class maps keyed by color name
 const COLOR = {
-  cyan:    { text: 'text-neon-cyan',   border: 'border-neon-cyan/20',    bg: 'bg-neon-cyan/5'    },
-  violet:  { text: 'text-violet-400',  border: 'border-violet-500/20',   bg: 'bg-violet-500/5'   },
-  emerald: { text: 'text-emerald-400', border: 'border-emerald-500/20',  bg: 'bg-emerald-500/5'  },
-  rose:    { text: 'text-rose-400',    border: 'border-rose-500/20',     bg: 'bg-rose-500/5'     },
+  cyan:    { text: 'text-neon-cyan',   border: 'border-neon-cyan/20',   bg: 'bg-neon-cyan/5'   },
+  violet:  { text: 'text-violet-400',  border: 'border-violet-500/20',  bg: 'bg-violet-500/5'  },
+  emerald: { text: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+  rose:    { text: 'text-rose-400',    border: 'border-rose-500/20',    bg: 'bg-rose-500/5'    },
 }
 
-// ─── Metric card ─────────────────────────────────────────────────────────────
-function MetricCard({ metric, index }) {
-  const c = COLOR[metric.color]
+// ─── Metric card ──────────────────────────────────────────────────────────────
+function MetricCard({ label, value, sub, icon, color, loading, index }) {
+  const c = COLOR[color]
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -47,14 +30,13 @@ function MetricCard({ metric, index }) {
       className={`glass corner-accent rounded-sm p-5 border ${c.border}`}
     >
       <div className="flex items-start justify-between mb-3">
-        <span className={`font-mono text-2xl ${c.text}`}>{metric.icon}</span>
-        <span className={`font-mono text-[9px] px-1.5 py-0.5 border ${c.border} ${c.bg} ${c.text} tracking-widest`}>
-          {metric.change}
-        </span>
+        <span className={`font-mono text-2xl ${c.text}`}>{icon}</span>
       </div>
-      <div className={`font-rajdhani font-bold text-3xl ${c.text} mb-1`}>{metric.value}</div>
-      <div className="font-space text-xs text-slate-400">{metric.label}</div>
-      <div className="font-mono text-[9px] text-slate-700 mt-0.5">{metric.period}</div>
+      <div className={`font-rajdhani font-bold text-3xl ${c.text} mb-1 ${loading ? 'animate-pulse-slow' : ''}`}>
+        {loading ? '—' : value}
+      </div>
+      <div className="font-space text-xs text-slate-400">{label}</div>
+      <div className="font-mono text-[9px] text-slate-700 mt-0.5">{sub}</div>
     </motion.div>
   )
 }
@@ -64,21 +46,19 @@ function ServerRow({ svc, index }) {
   const barColor =
     svc.uptime >= 99.5 ? 'bg-emerald-400' :
     svc.uptime >= 98   ? 'bg-yellow-400'  : 'bg-red-400'
-
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.55 + index * 0.07 }}
+      animate={{ opacity: 1,  x: 0 }}
+      transition={{ delay: 0.5 + index * 0.07 }}
       className="flex items-center gap-4"
     >
       <span className="w-44 font-mono text-xs text-slate-400 shrink-0 truncate">{svc.name}</span>
       <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-        {/* Animated fill — width driven by uptime % */}
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${svc.uptime}%` }}
-          transition={{ delay: 0.65 + index * 0.07, duration: 0.8, ease: 'easeOut' }}
+          transition={{ delay: 0.6 + index * 0.07, duration: 0.8, ease: 'easeOut' }}
           className={`h-full rounded-full ${barColor}`}
         />
       </div>
@@ -96,6 +76,60 @@ function ServerRow({ svc, index }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Overview() {
+  // ── State untuk metrik real dari Supabase ─────────────────────────────────
+  const [stats, setStats]         = useState(null)
+  const [recentMsgs, setRecentMsgs] = useState([])
+  const [loading, setLoading]     = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true)
+
+      // Jalankan semua query secara paralel
+      const [
+        { count: totalMsgs  },
+        { count: unreadMsgs },
+        { count: totalProjs },
+        { count: activeProjs},
+        { data:  latest     },
+      ] = await Promise.all([
+        // Total pesan masuk
+        supabase.from('messages').select('*', { count: 'exact', head: true }),
+        // Pesan belum dibaca
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('read', false),
+        // Total proyek
+        supabase.from('projects').select('*', { count: 'exact', head: true }),
+        // Proyek aktif (belum LIVE)
+        supabase.from('projects').select('*', { count: 'exact', head: true }).neq('status', 'LIVE'),
+        // 4 pesan terbaru untuk activity log
+        supabase.from('messages').select('name, email, created_at').order('created_at', { ascending: false }).limit(4),
+      ])
+
+      setStats({ totalMsgs, unreadMsgs, totalProjs, activeProjs })
+      setRecentMsgs(latest ?? [])
+      setLoading(false)
+    }
+
+    fetchStats()
+
+    // Real-time: update unread count saat pesan baru masuk
+    const channel = supabase
+      .channel('overview-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
+        fetchStats()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  const metrics = [
+    { label: 'Total Pesan Masuk',  value: stats?.totalMsgs  ?? 0,  sub: 'dari form kontak',     icon: '◈', color: 'cyan'    },
+    { label: 'Pesan Belum Dibaca', value: stats?.unreadMsgs ?? 0,  sub: 'perlu ditindaklanjuti', icon: '◉', color: 'rose'    },
+    { label: 'Total Proyek',       value: stats?.totalProjs ?? 0,  sub: 'di semua status',       icon: '◇', color: 'violet'  },
+    { label: 'Proyek Aktif',       value: stats?.activeProjs ?? 0, sub: 'belum selesai',         icon: '⬡', color: 'emerald' },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -103,15 +137,16 @@ export default function Overview() {
         <h2 className="font-rajdhani font-bold text-2xl text-white">System Overview</h2>
       </div>
 
-      {/* Metric cards */}
+      {/* Metric cards — data dari Supabase */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {METRICS.map((m, i) => <MetricCard key={m.label} metric={m} index={i} />)}
+        {metrics.map((m, i) => (
+          <MetricCard key={m.label} {...m} loading={loading} index={i} />
+        ))}
       </div>
 
-      {/* Server & Infrastructure Status */}
+      {/* Server status */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.5 }}
         className="glass corner-accent rounded-sm p-6"
       >
@@ -130,23 +165,32 @@ export default function Overview() {
         </div>
       </motion.div>
 
-      {/* Activity log */}
+      {/* Activity log — pesan terbaru dari Supabase */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
         className="glass rounded-sm p-5"
       >
-        <p className="section-label mb-4">// Activity Log</p>
-        <div className="space-y-2.5">
-          {ACTIVITY_LOG.map((log, i) => (
-            <div key={i} className="flex items-start gap-3 font-mono text-xs">
-              <span className="text-slate-600 shrink-0 w-16">{log.time}</span>
-              <span className={`w-1.5 h-1.5 rounded-full mt-0.5 shrink-0 ${log.type === 'success' ? 'bg-emerald-400' : 'bg-neon-cyan'}`} />
-              <span className="text-slate-500">{log.event}</span>
-            </div>
-          ))}
-        </div>
+        <p className="section-label mb-4">// Recent Inquiries</p>
+        {loading ? (
+          <p className="font-mono text-xs text-slate-700 animate-pulse-slow">LOADING...</p>
+        ) : recentMsgs.length === 0 ? (
+          <p className="font-mono text-xs text-slate-700">// Belum ada pesan masuk</p>
+        ) : (
+          <div className="space-y-2.5">
+            {recentMsgs.map((msg, i) => (
+              <div key={i} className="flex items-start gap-3 font-mono text-xs">
+                <span className="text-slate-600 shrink-0 w-20 truncate">
+                  {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan mt-0.5 shrink-0" />
+                <span className="text-slate-500">
+                  Pesan baru dari <span className="text-neon-cyan/70">{msg.name}</span> — {msg.email}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
   )
